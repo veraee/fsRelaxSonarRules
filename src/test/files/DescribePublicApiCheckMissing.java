@@ -1,4 +1,3 @@
-package org.sonar.samples.java.checks;
 
 
 public class DescribePublicApiCheckMissing { // Noncompliant {{Document either this public class or the single public constructor by adding an explicit description.}}

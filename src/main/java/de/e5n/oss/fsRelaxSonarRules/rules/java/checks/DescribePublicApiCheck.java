@@ -7,7 +7,6 @@ import org.apache.commons.lang.StringUtils;
 import org.sonar.api.utils.WildcardPattern;
 import org.sonar.check.Rule;
 import org.sonar.check.RuleProperty;
-import org.sonar.java.RspecKey;
 import org.sonar.java.ast.visitors.PublicApiChecker;
 import org.sonar.java.checks.helpers.ExpressionsHelper;
 import org.sonar.java.model.PackageUtils;
@@ -15,6 +14,7 @@ import org.sonar.java.model.declaration.MethodTreeImpl;
 import org.sonar.plugins.java.api.JavaFileScanner;
 import org.sonar.plugins.java.api.JavaFileScannerContext;
 import org.sonar.plugins.java.api.semantic.SymbolMetadata;
+import org.sonar.plugins.java.api.semantic.Type;
 import org.sonar.plugins.java.api.tree.BaseTreeVisitor;
 import org.sonar.plugins.java.api.tree.ClassTree;
 import org.sonar.plugins.java.api.tree.CompilationUnitTree;
@@ -83,6 +83,7 @@ public class DescribePublicApiCheck extends BaseTreeVisitor implements JavaFileS
     private boolean reportUndocumentedReturnValue = false;
     private boolean reportUndocumentedExceptions = false;
     private boolean reportOnlyIfNeitherClassOrConstructorIsUndocumentedInCaseOfSingleConstructor = true;
+    private boolean theUsualCtorsOfExceptionMayBeUndocumentedIfTheClassIsDocumented = true;
 
     @Override
     public void scanFile(JavaFileScannerContext context) {
@@ -133,7 +134,7 @@ public class DescribePublicApiCheck extends BaseTreeVisitor implements JavaFileS
         if (!isExcluded(tree, symbolMetadata)) {
             Javadoc javadoc = new Javadoc(tree);
             if (javadoc.noMainDescription() && !isNonVoidMethodWithNoParameter(tree, javadoc)) {
-                if (!alreadyReportedRelaxedCCDocu(tree, reportTree)) {
+                if (!alreadyProcessedRelaxedCCDocu(tree, reportTree)) {
                     context.reportIssue(this, reportTree, "Document this public " + getType(tree) + " by adding an explicit description.");
                 }
             } else {
@@ -165,8 +166,16 @@ public class DescribePublicApiCheck extends BaseTreeVisitor implements JavaFileS
      * This method assumes that it is already verified that:
      *  - this tree needs documentation, and
      *  - this tree is missing that documentation.
+     *
+     *  @return true, if we already have processed this tree node, hence: no need to report it further.
      */
-    private boolean alreadyReportedRelaxedCCDocu(Tree tree, Tree reportTree) {
+    private boolean alreadyProcessedRelaxedCCDocu(Tree tree, Tree reportTree) {
+        if (theUsualCtorsOfExceptionMayBeUndocumentedIfTheClassIsDocumented) {
+            if (isCtor(tree) && itsClassExtendsException(tree) && isOneOfTheUsualExceptionCtors(tree)) {
+                // ok
+                return true;
+            }
+        }
         if (reportOnlyIfNeitherClassOrConstructorIsUndocumentedInCaseOfSingleConstructor) {
             if (isClassWhichHasSingleConstructor(tree)) {
                 if (isClassWhichHasSingleConstructorWithMainDescription(tree)) {
@@ -185,6 +194,55 @@ public class DescribePublicApiCheck extends BaseTreeVisitor implements JavaFileS
             }
         }
         return false;
+    }
+
+    private boolean isOneOfTheUsualExceptionCtors(Tree tree) {
+        MethodTree ctor = (MethodTree) tree;
+        List<VariableTree> params = ctor.parameters();
+        // "Exception()"
+        if (params.isEmpty()) {
+            return true;
+        }
+        // "Exception(String message)"
+        if (params.size() == 1
+                && params.get(0).type().symbolType().is("java.lang.String")) {
+            return true;
+        }
+        // "Exception(String message, Throwable cause)"
+        if (params.size() == 2
+                && params.get(0).type().symbolType().is("java.lang.String")
+                && params.get(1).type().symbolType().is("java.lang.Throwable") ) {
+            return true;
+        }
+        // "Exception(Throwable cause)"
+        if (params.size() == 1
+                && params.get(0).type().symbolType().is("java.lang.Throwable")) {
+            return true;
+        }
+        // else:
+        return false;
+
+    }
+
+    private boolean itsClassExtendsException(Tree ctorTree) {
+        ClassTree clazz = ((ClassTree) ctorTree.parent());
+        TypeTree clazzIT = clazz.superClass();  //IdentifierTreeImpl
+        if (clazzIT == null) {
+            return false;
+        }
+        Type clazzCJT = clazzIT.symbolType();  //ClassJavaType
+
+        while (clazzCJT != null) {
+            if (clazzCJT.is("java.lang.Throwable")) {
+                return true;
+            }
+            clazzCJT = clazzCJT.symbol().superClass();  //ClassJavaType
+        }
+        return false;
+    }
+
+    private boolean isCtor(Tree tree) {
+        return tree.kind() == Kind.CONSTRUCTOR;
     }
 
     private boolean isClassWhichHasSingleConstructor(Tree tree) {

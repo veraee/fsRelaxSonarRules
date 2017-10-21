@@ -1,4 +1,3 @@
-package org.sonar.samples.java.checks;
 
 import org.apache.commons.collections.CollectionUtils;
 import java.util.Collections;

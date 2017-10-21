@@ -1,4 +1,3 @@
-package org.sonar.samples.java.checks;
 
 /**
  * Some documentation 1

@@ -25,4 +25,17 @@ public class DescribePublicApiCheckRelaxedCCDocuTest {
         JavaCheckVerifier.verify("src/test/files/DescribePublicApiCheckTwoCtors.java", new DescribePublicApiCheck());
     }
 
+
+    @Test
+    public void usualExceptionCtorsNoNeedToComment1() {
+        JavaCheckVerifier.verifyNoIssue("src/test/files/DescribePublicApiCheckUsualExceptionCtors.java", new DescribePublicApiCheck());
+    }
+
+    @Test
+    public void usualExceptionCtorsNoNeedToComment2() {
+        JavaCheckVerifier.verify("src/test/files/DescribePublicApiCheckUsualExceptionCtors2.java", new DescribePublicApiCheck());
+    }
+
+
+
 }

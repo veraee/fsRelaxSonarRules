@@ -1,4 +1,3 @@
-package org.sonar.samples.java.checks;
 
 
 public class DescribePublicApiCheck2b {
