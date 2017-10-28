@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.utils.WildcardPattern;
+import org.sonar.check.Priority;
 import org.sonar.check.Rule;
 import org.sonar.check.RuleProperty;
 import org.sonar.java.ast.visitors.PublicApiChecker;
@@ -47,7 +48,13 @@ import java.util.stream.Collectors;
 
 import org.sonar.java.checks.PatternUtils;
 
-@Rule(key = "DescribePublicApi")
+@Rule(
+        key = "DescribePublicApi",
+        name = "Should document public api.",
+        description = "Relaxed version of PublicApiCheck.",
+        priority = Priority.MAJOR,
+        tags = {"refactoring"}
+)
 public class DescribePublicApiCheck extends BaseTreeVisitor implements JavaFileScanner {
 
     private static final Kind[] CLASS_KINDS = PublicApiChecker.classKinds();

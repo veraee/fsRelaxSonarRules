@@ -10,4 +10,9 @@ public class CommonsOldCommonsCurrentCheckTest {
         JavaCheckVerifier.verify("src/test/files/CommonsOldCommonsCurrentCheckC3.java", new CommonsOldCommonsCurrentCheck());
     }
 
+    @Test
+    public void importedC4() {
+        JavaCheckVerifier.verify("src/test/files/CommonsOldCommonsCurrentCheckC3C4.java", new CommonsOldCommonsCurrentCheck());
+    }
+
 }
