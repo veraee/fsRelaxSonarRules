@@ -21,7 +21,7 @@ package de.e5n.oss.fsRelaxSonarRules.rules.java;
 
 import com.google.common.collect.ImmutableList;
 import de.e5n.oss.fsRelaxSonarRules.rules.java.checks.CommonsOldCommonsCurrentCheck;
-import de.e5n.oss.fsRelaxSonarRules.rules.java.checks.DescribePublicApiCheck;
+import de.e5n.oss.fsRelaxSonarRules.rules.java.checks.RelaxedUndocumentedApiCheck;
 import org.sonar.plugins.java.api.JavaCheck;
 
 import java.util.List;
@@ -38,7 +38,7 @@ public final class RulesList {
   public static List<Class<? extends JavaCheck>> getJavaChecks() {
     return ImmutableList.<Class<? extends JavaCheck>>builder()
       .add(CommonsOldCommonsCurrentCheck.class)
-      .add(DescribePublicApiCheck.class)
+      .add(RelaxedUndocumentedApiCheck.class)
       .build();
   }
 

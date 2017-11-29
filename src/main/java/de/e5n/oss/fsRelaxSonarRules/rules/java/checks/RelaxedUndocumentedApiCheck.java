@@ -49,13 +49,13 @@ import java.util.stream.Collectors;
 import org.sonar.java.checks.PatternUtils;
 
 @Rule(
-        key = "DescribePublicApi",
+        key = "RelaxedUndocumentedApi",
         name = "Should document public api.",
-        description = "Relaxed version of PublicApiCheck.",
+        description = "Relaxed version of UndocumentedApi S1176.",
         priority = Priority.MAJOR,
         tags = {"refactoring"}
 )
-public class DescribePublicApiCheck extends BaseTreeVisitor implements JavaFileScanner {
+public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements JavaFileScanner {
 
     private static final Kind[] CLASS_KINDS = PublicApiChecker.classKinds();
     private static final Kind[] METHOD_KINDS = PublicApiChecker.methodKinds();
