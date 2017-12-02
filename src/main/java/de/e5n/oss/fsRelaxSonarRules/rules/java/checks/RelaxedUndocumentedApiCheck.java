@@ -650,65 +650,75 @@ public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements Java
     }
 
     private static boolean isOverriding(MethodTree tree) {
-        Symbol.MethodSymbol symbol = tree.symbol();
-
-        if (symbol.isStatic() || symbol.isPrivate()) {
-            return false;
-        }
-
-        Symbol.TypeSymbol clazz = symbol.enclosingClass();
-        return overriddenCheckSupers(tree, clazz);
+        return new MethodIsOverriding(tree).check();
     }
 
-    private static boolean overriddenCheckSupers(MethodTree tree, Symbol.TypeSymbol clazz) {
-        Type superClass = clazz.superClass();
-        if (superClass != null) {
-            if (hasOverridable(tree, superClass)) {
-                return true;
-            };
-        }
-        List<Type> interfaces = clazz.interfaces();
-        if (interfaces.stream().anyMatch(i -> hasOverridable(tree, i))) {
-            return true;
+    public static class MethodIsOverriding {
+        private final MethodTree tree;
+
+        private MethodIsOverriding(MethodTree tree) {
+            this.tree = tree;
         }
 
-        // else:
-        return false;
-    }
+        public boolean check() {
+            Symbol.MethodSymbol symbol = tree.symbol();
 
-    private static boolean hasOverridable(MethodTree tree, Type type) {
-        if (thisTypeHasOverridable(tree, type)) {
-            return true;
-        }
-        return overriddenCheckSupers(tree, type.symbol());
-    }
-
-    private static boolean thisTypeHasOverridable(MethodTree tree, Type type) {
-        return type.symbol().memberSymbols().stream().anyMatch(s -> isOverriddenBy(tree, s));
-    }
-
-    private static boolean isOverriddenBy(MethodTree tree, Symbol s) {
-        if (!s.isMethodSymbol() || s.isPrivate() || s.isStatic()) {
-            return false;
-        }
-
-        Symbol.MethodSymbol sSymbol = (Symbol.MethodSymbol) s;
-        if (!tree.simpleName().name().equals(sSymbol.name())) {
-            return false;
-        }
-
-        List<Type> treeParams = tree.symbol().parameterTypes();
-        List<Type> sParams = sSymbol.parameterTypes();
-        if (treeParams.size() != sParams.size()) {
-            return false;
-        }
-        for (int i = 0; i < treeParams.size(); i++) {
-            if (!sParams.get(i).equals(treeParams.get(i))) {
+            if (symbol.isStatic() || symbol.isPrivate()) {
                 return false;
             }
+
+            Symbol.TypeSymbol type = symbol.enclosingClass();
+            return inspectSuperClassesAndInterfaces(type);
         }
 
-        return true;
+        private boolean inspectSuperClassesAndInterfaces(Symbol.TypeSymbol type) {
+            return superClassesHaveMatchingOverridable(type) || interfacesHaveMatchingOverridable(type);
+        }
+
+        private boolean interfacesHaveMatchingOverridable(Symbol.TypeSymbol type) {
+            return type.interfaces().stream().anyMatch(iface -> hasOverridable(iface));
+        }
+
+        private boolean superClassesHaveMatchingOverridable(Symbol.TypeSymbol type) {
+            Type superClass = type.superClass();
+            return superClass != null && hasOverridable(superClass);
+        }
+
+        private boolean hasOverridable(Type type) {
+            return hasOwnOverridable(type) || inspectSuperClassesAndInterfaces(type.symbol());
+        }
+
+        private boolean hasOwnOverridable(Type type) {
+            return type.symbol().memberSymbols().stream().anyMatch(symbol -> isOverriddenBy(symbol));
+        }
+
+        private boolean isOverriddenBy(Symbol symbol) {
+            return symbol.isMethodSymbol() &&
+                    !symbol.isPrivate() &&
+                    !symbol.isStatic() &&
+                    sameMethodName(symbol) &&
+                    sameMethodSignature(symbol);
+        }
+
+        private boolean sameMethodName(Symbol symbol) {
+            return tree.simpleName().name().equals(symbol.name());
+        }
+
+        private boolean sameMethodSignature(Symbol symbol) {
+            List<Type> treeParams = tree.symbol().parameterTypes();
+            List<Type> symbolParams = ((Symbol.MethodSymbol) symbol).parameterTypes();
+            if (treeParams.size() != symbolParams.size()) {
+                return false;
+            }
+            for (int i = 0; i < treeParams.size(); i++) {
+                if (!symbolParams.get(i).equals(treeParams.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
     }
+
 
 }
