@@ -2,7 +2,6 @@ package de.e5n.oss.fsRelaxSonarRules.rules.java.checks;
 
 import com.google.common.collect.ImmutableSet;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.api.utils.WildcardPattern;
 import org.sonar.check.Priority;
@@ -11,9 +10,9 @@ import org.sonar.check.RuleProperty;
 import org.sonar.java.ast.visitors.PublicApiChecker;
 import org.sonar.java.checks.helpers.ExpressionsHelper;
 import org.sonar.java.model.PackageUtils;
-import org.sonar.java.model.declaration.MethodTreeImpl;
 import org.sonar.plugins.java.api.JavaFileScanner;
 import org.sonar.plugins.java.api.JavaFileScannerContext;
+import org.sonar.plugins.java.api.semantic.Symbol;
 import org.sonar.plugins.java.api.semantic.SymbolMetadata;
 import org.sonar.plugins.java.api.semantic.Type;
 import org.sonar.plugins.java.api.tree.BaseTreeVisitor;
@@ -46,8 +45,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.sonar.java.checks.PatternUtils;
-
 @Rule(
         key = "RelaxedUndocumentedApi",
         name = "Should document public api.",
@@ -59,6 +56,7 @@ public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements Java
 
     private static final Kind[] CLASS_KINDS = PublicApiChecker.classKinds();
     private static final Kind[] METHOD_KINDS = PublicApiChecker.methodKinds();
+
 
     private static final String DEFAULT_FOR_CLASSES = "**"; // "**.api.**";
     private static final String DEFAULT_EXCLUSION = "**.internal.**";
@@ -86,10 +84,34 @@ public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements Java
     private final Pattern getterPattern = Pattern.compile("(get|is)[A-Z].*");
     private JavaFileScannerContext context;
 
+    @RuleProperty(
+            key = "reportUndocumentedParameters",
+            description = "Do report undocumented parameters (true for the un-relaxed behavior)",
+            defaultValue = "false")
     private boolean reportUndocumentedParameters = false;
+
+    @RuleProperty(
+            key = "reportUndocumentedReturnValue",
+            description = "Do report undocumented return value (true for the un-relaxed behavior)",
+            defaultValue = "false")
     private boolean reportUndocumentedReturnValue = false;
+
+    @RuleProperty(
+            key = "reportUndocumentedExceptions",
+            description = "Do report undocumented exceptions (true for the un-relaxed behavior)",
+            defaultValue = "false")
     private boolean reportUndocumentedExceptions = false;
+
+    @RuleProperty(
+            key = "reportOnlyIfNeitherClassOrConstructor",
+            description = "Do report only if neither class nor constructor is documented (false for the un-relaxed behavior)",
+            defaultValue = "true")
     private boolean reportOnlyIfNeitherClassOrConstructorIsUndocumentedInCaseOfSingleConstructor = true;
+
+    @RuleProperty(
+            key = "theUsualCtorsOfExceptionMayBeUndocumented",
+            description = "Do report only undocumented unusual exception contructors (false for the un-relaxed behavior)",
+            defaultValue = "true")
     private boolean theUsualCtorsOfExceptionMayBeUndocumentedIfTheClassIsDocumented = true;
 
     @Override
@@ -360,8 +382,9 @@ public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements Java
         return WildcardPattern.match(getExclusionPatterns(), className());
     }
 
+
     private static boolean isOverridingMethod(Tree tree) {
-        return tree.is(Tree.Kind.METHOD) && BooleanUtils.isTrue(((MethodTreeImpl) tree).isOverriding());
+        return tree.is(Tree.Kind.METHOD) && isOverriding((MethodTree) tree);
     }
 
     private static boolean isVisibleForTestingMethod(Tree tree, SymbolMetadata symbolMetadata) {
@@ -605,6 +628,87 @@ public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements Java
             return currrentValue;
         }
 
+    }
+
+    /**
+     * Copy of sonar-java: org.sonar.java.checks.PatternUtils as of 20171201
+     */
+    private static final class PatternUtils {
+
+        private PatternUtils() {
+        }
+
+        public static WildcardPattern[] createPatterns(String patterns) {
+            String[] p = StringUtils.split(patterns, ',');
+            WildcardPattern[] result = new WildcardPattern[p.length];
+            for (int i = 0; i < result.length; i++) {
+                result[i] = WildcardPattern.create(StringUtils.trim(p[i]), ".");
+            }
+            return result;
+        }
+
+    }
+
+    private static boolean isOverriding(MethodTree tree) {
+        Symbol.MethodSymbol symbol = tree.symbol();
+
+        if (symbol.isStatic() || symbol.isPrivate()) {
+            return false;
+        }
+
+        Symbol.TypeSymbol clazz = symbol.enclosingClass();
+        return overriddenCheckSupers(tree, clazz);
+    }
+
+    private static boolean overriddenCheckSupers(MethodTree tree, Symbol.TypeSymbol clazz) {
+        Type superClass = clazz.superClass();
+        if (superClass != null) {
+            if (hasOverridable(tree, superClass)) {
+                return true;
+            };
+        }
+        List<Type> interfaces = clazz.interfaces();
+        if (interfaces.stream().anyMatch(i -> hasOverridable(tree, i))) {
+            return true;
+        }
+
+        // else:
+        return false;
+    }
+
+    private static boolean hasOverridable(MethodTree tree, Type type) {
+        if (thisTypeHasOverridable(tree, type)) {
+            return true;
+        }
+        return overriddenCheckSupers(tree, type.symbol());
+    }
+
+    private static boolean thisTypeHasOverridable(MethodTree tree, Type type) {
+        return type.symbol().memberSymbols().stream().anyMatch(s -> isOverriddenBy(tree, s));
+    }
+
+    private static boolean isOverriddenBy(MethodTree tree, Symbol s) {
+        if (!s.isMethodSymbol() || s.isPrivate() || s.isStatic()) {
+            return false;
+        }
+
+        Symbol.MethodSymbol sSymbol = (Symbol.MethodSymbol) s;
+        if (!tree.simpleName().name().equals(sSymbol.name())) {
+            return false;
+        }
+
+        List<Type> treeParams = tree.symbol().parameterTypes();
+        List<Type> sParams = sSymbol.parameterTypes();
+        if (treeParams.size() != sParams.size()) {
+            return false;
+        }
+        for (int i = 0; i < treeParams.size(); i++) {
+            if (!sParams.get(i).equals(treeParams.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 }
