@@ -1,4 +1,7 @@
-    My Simple Sonar Rules
+
+# My Simple Sonar Rules
+
+[![Build Status](https://travis-ci.org/veraee/fsRelaxSonarRules.svg?branch=master)](https://travis-ci.org/veraee/fsRelaxSonarRules)
 
 _Hint for IDE_:
 Run `mvn test-compile` once before first test,
