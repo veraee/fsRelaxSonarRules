@@ -1,7 +1,9 @@
 
 # My Simple Sonar Rules
 
-[![Build Status](https://travis-ci.org/veraee/fsRelaxSonarRules.svg?branch=master)](https://travis-ci.org/veraee/fsRelaxSonarRules)
+[![Build Status](https://travis-ci.org/veraee/fsRelaxSonarRules.svg?branch=master)](https://travis-ci.org/veraee/fsRelaxSonarRules)  <a href="https://sonarcloud.io/dashboard?id=de.e5n.oss.fsRelaxSonarRules%3AfsRelaxSonarRules-main">
+                                                                                                                                      <img src="https://sonarcloud.io/api/badges/gate?key=de.e5n.oss.fsRelaxSonarRules%3AfsRelaxSonarRules-main"/></a>
+
 
 ## Rules
 
@@ -21,6 +23,7 @@ some rules are more _relaxed_ than in the original:
   exceptional case sufficiently.
 - The _usual_ signatures of Exception constructors need not to be documented, as this is only noise.
    ```
+    Exception()
     Exception(String message)
     Exception(String message, Throwable cause)
     Exception(Throwable cause)

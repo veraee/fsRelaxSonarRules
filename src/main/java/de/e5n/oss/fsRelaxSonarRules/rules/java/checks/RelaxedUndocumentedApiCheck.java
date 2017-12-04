@@ -207,16 +207,13 @@ public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements Java
         }
         if (reportOnlyIfNeitherClassOrConstructorIsUndocumentedInCaseOfSingleConstructor) {
             if (isClassWhichHasSingleConstructor(tree)) {
-                if (isClassWhichHasSingleConstructorWithMainDescription(tree)) {
-                    // ok
-                } else {
+                if (!isClassWhichHasSingleConstructorWithMainDescription(tree)) {
                     context.reportIssue(this, reportTree, "Document either this public class or the single public constructor by adding an explicit description.");
                 }
                 return true;
-            } else if (isSingleConstructor(tree)) {
-                if (isSingleConstructorAndConstructorsClassHasMainDescription(tree)) {
-                    // ok
-                } else {
+            }
+            else if (isSingleConstructor(tree)) {
+                if (!isSingleConstructorAndConstructorsClassHasMainDescription(tree)) {
                     context.reportIssue(this, reportTree, "Document either this public single constructor or the class by adding an explicit description.");
                 }
                 return true;
@@ -287,6 +284,7 @@ public class RelaxedUndocumentedApiCheck extends BaseTreeVisitor implements Java
         if (!isClassWhichHasSingleConstructor(tree)) {
             return false;
         }
+        @SuppressWarnings("squid:S3655") // previous call to "isClassWhichHasSingleConstructor()" ensures that there is at least one CONSTRUCTOR, hence no need for Optional#isPresent()
         Tree ctor = ((ClassTree) tree).members().stream().filter(member -> member.kind() == Kind.CONSTRUCTOR).findFirst().get();
         Javadoc javadocCtor = new Javadoc(ctor);
         return !javadocCtor.noMainDescription();
