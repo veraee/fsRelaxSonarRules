@@ -35,11 +35,16 @@ public class CommonsOldCommonsCurrentCheck extends IssuableSubscriptionVisitor {
         if (tree.kind() == Kind.METHOD_INVOCATION) {
             MethodInvocationTree methodInvocationTree = (MethodInvocationTree) tree;
             String fqnClass = methodInvocationTree.symbol().owner().type().fullyQualifiedName();
-            System.out.println("cn|" + fqnClass +"|");
+            //System.out.println("cn|" + fqnClass +"|");
 
             if (fqnClass.startsWith("org.apache.commons.collections.")) {
-                System.out.println("cn|" + fqnClass +"| issue");
+                //System.out.println("cn|" + fqnClass +"| issue");
                 reportIssue(tree, "Use current version of commons collections collections4");
+            }
+
+            if (fqnClass.startsWith("org.apache.commons.lang.")) {
+                //System.out.println("cn|" + fqnClass +"| issue");
+                reportIssue(tree, "Use current version of commons lang lang3");
             }
         }
     }

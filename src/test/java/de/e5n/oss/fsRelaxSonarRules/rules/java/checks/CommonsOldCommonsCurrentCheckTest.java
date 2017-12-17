@@ -6,13 +6,23 @@ import org.sonar.java.checks.verifier.JavaCheckVerifier;
 public class CommonsOldCommonsCurrentCheckTest {
 
     @Test
-    public void test() {
+    public void collectionsV3() {
         JavaCheckVerifier.verify("src/test/files/CommonsOldCommonsCurrentCheckC3.java", new CommonsOldCommonsCurrentCheck());
     }
 
     @Test
-    public void importedC4() {
+    public void collectionsV3AndV4() {
         JavaCheckVerifier.verify("src/test/files/CommonsOldCommonsCurrentCheckC3C4.java", new CommonsOldCommonsCurrentCheck());
+    }
+
+    @Test
+    public void langV2() {
+        JavaCheckVerifier.verify("src/test/files/CommonsOldCommonsCurrentCheckL2.java", new CommonsOldCommonsCurrentCheck());
+    }
+
+    @Test
+    public void langV2AndV3() {
+        JavaCheckVerifier.verify("src/test/files/CommonsOldCommonsCurrentCheckL2L3.java", new CommonsOldCommonsCurrentCheck());
     }
 
 }
