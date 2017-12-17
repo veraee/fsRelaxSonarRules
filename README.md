@@ -50,7 +50,26 @@ _Make plugin jar:_
 - mvn clean install
 - cp target/fsRelaxSonarRules-main-1.0-SNAPSHOT.jar _SONAR_/sonarqube-6.6/extensions/plugins/
 
-## Release notes
+## Releases
 
-PENDING: Initial release.
- 
+Via maven:
+
+```
+  <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
+  
+    <dependency>
+    
+      <groupId>com.github.veraee</groupId>
+      <artifactId>fsRelaxSonarRules</artifactId>
+      <version>v0.0.1-alpha.1</version>
+    </dependency>
+```
+
+or download jar file: 
+https://github.com/veraee/fsRelaxSonarRules/releases/download/v0.0.1-alpha.1/fsRelaxSonarRules-main-1.0-SNAPSHOT.zip
+
