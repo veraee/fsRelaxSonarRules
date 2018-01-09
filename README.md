@@ -29,10 +29,15 @@ some rules are more _relaxed_ than in the original:
     Exception(Throwable cause)
    ```
    
+*Note: This rule's name is "Should document public api"; with classes filter "**" it replaces
+the original rule "Public types, methods and fields (API) should be documented with Javadoc"*
+   
 **CommonsOldCommonsCurrent**: Prefer to use current version of the Apache Commons library:
 - Prefer collections4 over collections
 - Prefer lang3 over lang
     
+*Note: This rule's name is "Should use current version of apache commons libraries"*
+
 ## Build hints
 _Hint for IDE_:
 Run `mvn test-compile` once before first test,
@@ -47,6 +52,7 @@ Order of build:
 2. Build
 
 _Make plugin jar:_
+
 - mvn clean install
 - cp target/fsRelaxSonarRules-main-1.0-SNAPSHOT.jar _SONAR_/sonarqube-6.6/extensions/plugins/
 
